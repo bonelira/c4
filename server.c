@@ -10,8 +10,50 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#define MAX_CLIENTS 100
+#define MAX_CLIENTS 42
 #define BUFFER_SZ 2048
+#define NAME_LEN 42
+
+static _Atomic unsigned int cli_count = 0;
+static int uid = 10;
+
+// Client DSA
+// armazenará adress, socket descritor, userId e name;
+
+typedef struct
+{
+    struct sockaddr_in address;
+    int sockfd;
+    int userId;
+    char name[NAME_LEN];
+} client_t;
+
+client_t *clients[MAX_CLIENTS];
+
+pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void str_overwrite_stdout()
+{
+    printf("\r%s", "> ");
+    fflush(stdout);
+}
+
+void str_trim_lf(char *arr, int length)
+{
+    for (int i = 0; i < lenght; i++)
+    {
+        if()
+    }
+}
+
+void print_ip_addr(struct sockaddr_in addr)
+{
+    printf("%d.%d.%d.%d",
+           addr.sin_addr.s_addr & 0xff,
+           (addr.sin_addr.s_addr & 0xff00) >> 8,
+           (addr.sin_addr.s_addr & 0xff0000) >> 16,
+           (addr.sin_addr.s_addr & 0xff000000) >> 24);
+}
 
 int main(int argc, char **argv)
 {
@@ -24,7 +66,7 @@ int main(int argc, char **argv)
     char *ip = "127.0.0.1";
     int port = atoi(argv[1]);
     int option = 1;
-    int listenfd = 0, confd = 0;
+    int listenfd = 0, connfd = 0;
     struct sockaddr_in serv_addr;
     struct sockaddr_in cli_addr;
     pthread_t tid;
@@ -55,10 +97,29 @@ int main(int argc, char **argv)
     if (listen(listenfd, 10) < 0) // fd == file descriptor == descritor de arquivo
     {
         printf("ERRO:listen\n");
+
         return EXIT_FAILURE;
     }
 
     printf("=====The glorious *C4*=====\n");
     printf("*****PRECISO MUDAR ESSA MENSAGEM PARA A MENSAGEM MATRIX!*****\n");
     printf("=====SEJA BEM VINDOS!=====\n");
+
+    while (1)
+    {
+        socklen_t clilen = sizeof(cli_addr);
+        connfd = accept(listenfd, (struct sockaddr *)&cli_addr, &clilen);
+
+        // confirmando o MAX_CLIENTS
+
+        if ((cli_count + 1) == MAX_CLIENTS)
+        {
+            printf("Max clients connected to the C4. Connection Rejected\n ");
+            print_ip_addr(cli_addr);
+            close(connfd);
+            continue;
+        }
+    }
+
+    return EXIT_SUCCESS;
 }
