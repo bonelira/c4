@@ -34,4 +34,31 @@ int main(int argc, char **argv)
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = inet_addr(ip);
     serv_addr.sin_port = htons(port);
+
+    // Signals  (interrupções que serão geradas pelo software)
+    signal(SIGPIPE, SIG_IGN);
+
+    if (setsockopt(listenfd, SOL_SOCKET, (SO_REUSEADDR), (char *)&option, sizeof(option)) < 0)
+    {
+        printf("ERROR: setsockopt\n");
+        return EXIT_FAILURE;
+    }
+
+    // O Bind
+    if (bind(listenfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        printf("ERRO: bind\n");
+        return EXIT_FAILURE;
+    }
+
+    // Listen
+    if (listen(listenfd, 10) < 0) // fd == file descriptor == descritor de arquivo
+    {
+        printf("ERRO:listen\n");
+        return EXIT_FAILURE;
+    }
+
+    printf("=====The glorious *C4*=====\n");
+    printf("*****PRECISO MUDAR ESSA MENSAGEM PARA A MENSAGEM MATRIX!*****\n");
+    printf("=====SEJA BEM VINDOS!=====\n");
 }
