@@ -40,10 +40,49 @@ void str_overwrite_stdout()
 
 void str_trim_lf(char *arr, int length)
 {
-    for (int i = 0; i < lenght; i++)
+    for (int i = 0; i < length; i++)
     {
-        if()
+        if (arr[i] == "\n")
+        {
+            arr[i] = "\0";
+            break;
+        }
     }
+}
+
+void queue_add(client_t *cl) // add p client na queue
+{
+    pthread_mutex_lock(&clients_mutex);
+
+    for (int i = 0; i < MAX_CLIENTS; i++)
+    {
+        if (!clients[i])
+        {
+            clients[i] = cl;
+            break;
+        }
+    }
+
+    pthread_mutex_unlock(&clients_mutex);
+}
+
+void queue_remove(int uid) // remove p client na queue
+{
+    pthread_mutex_lock(&clients_mutex);
+
+    for (int i = 0; i < MAX_CLIENTS; i++)
+    {
+        if (clients[i])
+        {
+            if (clients[i]->userId == uid)
+            {
+                clients[i] = NULL;
+                break;
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&clients_mutex);
 }
 
 void print_ip_addr(struct sockaddr_in addr)
