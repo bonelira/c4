@@ -29,5 +29,9 @@ int main(int argc, char **argv)
     struct sockaddr_in cli_addr;
     pthread_t tid;
 
-    // configuracoes 
+    // configuracoes do socket
+    listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = inet_addr(ip);
+    serv_addr.sin_port = htons(port);
 }
