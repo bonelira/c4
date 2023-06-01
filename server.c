@@ -42,9 +42,9 @@ void str_trim_lf(char *arr, int length)
 {
     for (int i = 0; i < length; i++)
     {
-        if (arr[i] == "\n")
+        if (arr[i] == '\n')
         {
-            arr[i] = "\0";
+            arr[i] = '\0';
             break;
         }
     }
@@ -92,6 +92,94 @@ void print_ip_addr(struct sockaddr_in addr)
            (addr.sin_addr.s_addr & 0xff00) >> 8,
            (addr.sin_addr.s_addr & 0xff0000) >> 16,
            (addr.sin_addr.s_addr & 0xff000000) >> 24);
+}
+
+void send_message(char *s, int uid)
+{
+    pthread_mutex_lock(&clients_mutex);
+
+    for (int i = 0; i < MAX_CLIENTS; i++)
+    {
+        if (clients[i])
+        {
+            if (clients[i]->userId != uid)
+            {
+                if (write(clients[i]->sockfd, s, strlen(s)) < 0)
+                {
+                    printf("ERROR: write to descriptor failed\n");
+                    break;
+                }
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&clients_mutex);
+}
+
+void *handle_client(void *arg) // vai lidar com as mensagens dos clientes
+{
+    char buffer[BUFFER_SZ];
+    char name[NAME_LEN];
+    int leave_flag = 0;
+    cli_count++;
+
+    client_t *cli = (client_t *)arg;
+
+    // Name
+    if (recv(cli->sockfd, name, NAME_LEN, 0) <= 0 || strlen(name) < 2 || strlen(name) >= NAME_LEN - 1)
+    {
+        printf("Enter a valid name");
+        leave_flag = 1;
+    }
+    else
+    {
+        strcpy(cli->name, name);
+        sprintf(buffer, "%s has joined the chat\n", cli->name);
+        printf("%s", buffer);
+        send_message(buffer, cli->userId);
+    }
+
+    bzero(buffer, BUFFER_SZ);
+    while (1)
+    {
+        if (leave_flag)
+        {
+            break;
+        }
+
+        int receive = recv(cli->sockfd, buffer, BUFFER_SZ, 0);
+
+        if (receive > 0)
+        {
+            if (strlen(buffer) > 0)
+            {
+                send_message(buffer, cli->userId);
+                str_trim_lf(buffer, strlen(buffer));
+                printf("%s -> %s", buffer, cli->name);
+            }
+        }
+        else if (receive == 0 || strcmp(buffer, "exit") == 0)
+        {
+            sprintf(buffer, "%s has abandoned us\n", cli->name); // mensagem de saída de user
+            printf("%s", buffer);                                // TODO: precisa melhorar a mensagem
+            send_message(buffer, cli->userId);
+            leave_flag = 1;
+        }
+        else
+        {
+            printf("ERROR: -1\n");
+            leave_flag = 1;
+        }
+        bzero(buffer, BUFFER_SZ);
+    }
+
+    close(cli->sockfd);
+    queue_remove(cli->userId);
+    free(cli);
+    cli_count--;
+    pthread_detach(pthread_self());
+
+    return NULL;
 }
 
 int main(int argc, char **argv)
@@ -158,6 +246,17 @@ int main(int argc, char **argv)
             close(connfd);
             continue;
         }
+
+        // config do Client
+
+        client_t *cli = (client_t *)malloc(sizeof(client_t));
+        cli->address = cli_addr;
+        cli->sockfd = connfd;
+        cli->userId = uid++;
+
+        // adicionando o cliente a queue
+        queue_add(cli);
+        pthread_create(&tid, NULL, &handle_client, (void *)cli);
     }
 
     return EXIT_SUCCESS;
