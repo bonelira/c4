@@ -228,9 +228,8 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    printf("=====The glorious *C4*=====\n");
-    printf("*****PRECISO MUDAR ESSA MENSAGEM PARA A MENSAGEM MATRIX!*****\n");
-    printf("=====SEJA BEM VINDOS!=====\n");
+    printf("=====The glorious *C4* Server=====\n");
+    printf("*****WE ARE ON!*****\n");
 
     while (1)
     {
