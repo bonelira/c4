@@ -216,7 +216,7 @@ int main(int argc, char **argv)
     // O Bind
     if (bind(listenfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
-        printf("ERRO: bind\n");
+        printf("ERRO: bind. Not avalaible\n");
         return EXIT_FAILURE;
     }
 
