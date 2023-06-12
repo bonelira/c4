@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <time.h>
 
 #define LENGTH 2048
 
@@ -23,7 +24,7 @@ void str_overwrite_stdout()
 
 void str_trim_lf(char *arr, int length)
 {
-    for (int i = 0; i < length; i++) // Here
+    for (int i = 0; i < length; i++)
     {
         if (arr[i] == '\n')
         {
@@ -36,6 +37,20 @@ void str_trim_lf(char *arr, int length)
 void catch_exit_by_ctrl_c(int sig)
 {
     flag = 1;
+}
+
+void get_time(char *buffer, size_t bufferSize)
+{
+    time_t currentTime;
+    struct tm *timeInfo;
+
+    currentTime = time(NULL);
+
+    
+    timeInfo = localtime(&currentTime);
+
+    
+    strftime(buffer, bufferSize, "%Y-%m-%d %H:%M:%S", timeInfo);
 }
 
 void send_msg_handler()
@@ -55,7 +70,9 @@ void send_msg_handler()
         }
         else
         {
-            sprintf(buffer, "%s: %s\n", name, message);
+            char timestamp[20];
+            get_time(timestamp, sizeof(timestamp));
+            sprintf(buffer, "[%s] %s: %s\n", timestamp, name, message);
             send(sockfd, buffer, strlen(buffer), 0);
         }
 
@@ -150,7 +167,7 @@ int main(int argc, char **argv)
     {
         if (flag)
         {
-            printf("\nHasta la vista,amigo\n");
+            printf("\nHasta la vista, amigo\n");
             break;
         }
     }
