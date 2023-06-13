@@ -11,10 +11,11 @@
 #include <time.h>
 
 #define LENGTH 2048
+#define MAX_NAME_LENGTH 42
 
 volatile sig_atomic_t flag = 0;
 int sockfd = 0;
-char name[42];
+char name[MAX_NAME_LENGTH];
 
 void str_overwrite_stdout()
 {
@@ -46,17 +47,15 @@ void get_time(char *buffer, size_t bufferSize)
 
     currentTime = time(NULL);
 
-    
     timeInfo = localtime(&currentTime);
 
-    
     strftime(buffer, bufferSize, "%Y-%m-%d %H:%M:%S", timeInfo);
 }
 
 void send_msg_handler()
 {
     char message[LENGTH] = {};
-    char buffer[LENGTH + 42] = {};
+    char buffer[LENGTH + MAX_NAME_LENGTH] = {};
 
     while (1)
     {
@@ -64,21 +63,26 @@ void send_msg_handler()
         fgets(message, LENGTH, stdin);
         str_trim_lf(message, LENGTH);
 
-        if (strcmp(message, "exit") == 0)
+        char timestamp[20];
+        get_time(timestamp, sizeof(timestamp));
+        sprintf(buffer, "[%s] %s: %s\n", timestamp, name, message);
+        int bytesSent = send(sockfd, buffer, strlen(buffer), 0);
+        if (bytesSent == -1)
         {
+            printf("ERROR: Failed to send message\n");
             break;
         }
-        else
+
+        if (strcmp(message, "exit") == 0)
         {
-            char timestamp[20];
-            get_time(timestamp, sizeof(timestamp));
-            sprintf(buffer, "[%s] %s: %s\n", timestamp, name, message);
-            send(sockfd, buffer, strlen(buffer), 0);
+            flag = 1; // Define a flag para sair do loop principal
+            break;
         }
 
         bzero(message, LENGTH);
-        bzero(buffer, LENGTH + 42);
+        bzero(buffer, LENGTH + MAX_NAME_LENGTH);
     }
+
     catch_exit_by_ctrl_c(2);
 }
 
@@ -119,10 +123,10 @@ int main(int argc, char **argv)
     signal(SIGINT, catch_exit_by_ctrl_c);
 
     printf("Enter your name: ");
-    fgets(name, 42, stdin);
+    fgets(name, MAX_NAME_LENGTH, stdin);
     str_trim_lf(name, strlen(name));
 
-    if (strlen(name) > 42 || strlen(name) < 2)
+    if (strlen(name) > MAX_NAME_LENGTH || strlen(name) < 2)
     {
         printf("Enter a valid name. Your name must be between 3 and 42 characters\n");
         return EXIT_FAILURE;
@@ -136,7 +140,7 @@ int main(int argc, char **argv)
     server_addr.sin_addr.s_addr = inet_addr(ip);
     server_addr.sin_port = htons(port);
 
-    // conexão com o serv
+    // conexão com o servidor
     int err = connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
     if (err == -1)
     {
@@ -144,10 +148,10 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    // Enviando o name
-    send(sockfd, name, 42, 0);
-    printf("*****Seja bem vindo ao C4*****\n");
-    printf("You now can talk");
+    // Enviando o nome
+    send(sockfd, name, MAX_NAME_LENGTH, 0);
+    printf("***** Welcome to C4 *****\n");
+    printf("You can start chatting now\n");
 
     pthread_t send_msg_thread;
     if (pthread_create(&send_msg_thread, NULL, (void *)send_msg_handler, NULL) != 0)
@@ -167,7 +171,7 @@ int main(int argc, char **argv)
     {
         if (flag)
         {
-            printf("\nHasta la vista, amigo\n");
+            printf("\nGoodbye, Popeye!\n");
             break;
         }
     }
